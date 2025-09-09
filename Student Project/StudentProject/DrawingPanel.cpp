@@ -1,58 +1,53 @@
 #include "DrawingPanel.h"
-#include "wx/graphics.h"
-#include "wx/dcbuffer.h"
+#include <wx/dcclient.h>
 
-DrawingPanel::DrawingPanel(wxWindow* parent)
-    : wxPanel(parent, wxID_ANY, wxDefaultPosition, wxSize(600, 600))
+wxBEGIN_EVENT_TABLE(DrawingPanel, wxPanel)
+    EVT_PAINT(DrawingPanel::OnPaint)
+    EVT_LEFT_UP(DrawingPanel::OnMouseClick)
+wxEND_EVENT_TABLE()
+
+DrawingPanel::DrawingPanel(wxWindow* parent, std::vector<std::vector<bool>>& gameBoardRef)
+    : wxPanel(parent), gameBoard(gameBoardRef)
 {
-    // Allow custom painting on this panel
-    this->SetBackgroundStyle(wxBG_STYLE_PAINT);
-
-    // Bind paint event to our custom drawing handler
-    this->Bind(wxEVT_PAINT, &DrawingPanel::OnPaint, this);
+    // Event table handles events, no Bind() needed
 }
 
-DrawingPanel::~DrawingPanel()
+DrawingPanel::~DrawingPanel() {}
+
+void DrawingPanel::SetGridSize(int size)
 {
-    // Empty destructor for now
+    gridSize = size;
+    Refresh(); // Redraw panel with new grid size
+}
+
+void DrawingPanel::OnMouseClick(wxMouseEvent& event)
+{
+    int cellWidth = GetSize().GetWidth() / gridSize;
+    int cellHeight = GetSize().GetHeight() / gridSize;
+    int col = event.GetX() / cellWidth;
+    int row = event.GetY() / cellHeight;
+    if (row >= 0 && row < gridSize && col >= 0 && col < gridSize)
+    {
+        gameBoard[row][col] = !gameBoard[row][col]; // Toggle cell state
+        Refresh();
+    }
 }
 
 void DrawingPanel::OnPaint(wxPaintEvent& event)
 {
-    // Use buffered paint DC to prevent flickering
-    wxAutoBufferedPaintDC dc(this);
-    dc.Clear();
-
-    // Create graphics context for smooth drawing
-    wxGraphicsContext* context = wxGraphicsContext::Create(dc);
-    if (!context)
-        return;
-
-    // Set pen and brush colors
-    context->SetPen(*wxBLACK);
-    context->SetBrush(*wxWHITE);
-
-    // Get panel size dynamically
-    wxSize panelSize = this->GetSize();
-    int panelWidth = panelSize.GetWidth();
-    int panelHeight = panelSize.GetHeight();
-
-    // Calculate cell width and height dynamically
-    double cellWidth = static_cast<double>(panelWidth) / gridSize;
-    double cellHeight = static_cast<double>(panelHeight) / gridSize;
-
-    // Draw 15x15 grid
+    wxPaintDC dc(this);
+    int cellWidth = GetSize().GetWidth() / gridSize;
+    int cellHeight = GetSize().GetHeight() / gridSize;
     for (int row = 0; row < gridSize; ++row)
     {
         for (int col = 0; col < gridSize; ++col)
         {
-            double x = col * cellWidth;
-            double y = row * cellHeight;
-
-            context->DrawRectangle(x, y, cellWidth, cellHeight);
+            if (gameBoard[row][col])
+                dc.SetBrush(wxBrush(wxLIGHT_GREY)); // Alive
+            else
+                dc.SetBrush(wxBrush(wxWHITE)); // Dead
+            dc.SetPen(*wxBLACK_PEN);
+            dc.DrawRectangle(col * cellWidth, row * cellHeight, cellWidth, cellHeight);
         }
     }
-
-    // Clean up graphics context
-    delete context;
 }
