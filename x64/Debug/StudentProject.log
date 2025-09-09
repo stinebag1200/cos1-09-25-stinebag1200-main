@@ -1,4 +1,0 @@
-﻿  App.cpp
-C:\Users\vikky.kumar.SUCCESSIVE\Downloads\wxWidgets-3.3.1\include\wx\msw\chkconf.h(380,1): error C1189: #error:  "wxFileSystemWatcher requires wxThread under MSW"
-  (compiling source file 'App.cpp')
-  
